@@ -19,7 +19,10 @@ def detection_event_stream():
 
 @app.route('/stream')
 def stream():
-    return Response(detection_event_stream(), mimetype="text/event-stream")
+    response = Response(detection_event_stream(), mimetype="text/event-stream")
+    # TODO manage this via configuration
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    return response
 
 if __name__ == '__main__':
     # start grpc server
