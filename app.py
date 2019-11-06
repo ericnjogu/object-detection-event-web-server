@@ -27,7 +27,7 @@ def stream():
     return response
 
 if __name__ == '__main__':
-    # start grpc server
+    # parse args
     parser = argparse.ArgumentParser(description=" stream detected object events to web clients")
     parser.add_argument("handler_port", help="port to listen for detection handling requests")
     parser.add_argument("--testing", help="add some test items to the event queue on startup", action="store_true")
@@ -35,17 +35,19 @@ if __name__ == '__main__':
     # credit - https://www.semantics3.com/blog/a-simplified-guide-to-grpc-in-python-6c4e25f0c506/
     # create server
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    # add implementing class to server
-    web_handler = WebDetectionHandler(event_queue)
-    detection_handler_pb2_grpc.add_DetectionHandlerServicer_to_server(web_handler, server);
-    # listen
+    # grpc port setup
     port = args.handler_port
     logging.getLogger().setLevel(logging.DEBUG)
     logging.info(f'starting server on port {port}')
     server.add_insecure_port(f'[::]:{port}')
+    # create queue
+    event_queue = queue.SimpleQueue()
+    # add implementing class to server
+    web_handler = WebDetectionHandler(event_queue)
+    detection_handler_pb2_grpc.add_DetectionHandlerServicer_to_server(web_handler, server);
+    # start grpc server
     server.start()
     # setup queue
-    event_queue = queue.SimpleQueue()
     if args.testing is True:
         event_queue.put(detection_handler_pb2.handle_detection_request(
             start_timestamp=1106,
