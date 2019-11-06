@@ -15,6 +15,7 @@ event_queue = None
 
 def detection_event_stream():
     """ get available detection item in event queue """
+    # json_format or a dependency appears to change top level field names to camel case
     json_no_newlines = json_format.MessageToJson(event_queue.get()).replace('\n', '')
     yield f"event:detection\ndata:{json_no_newlines}\n\n"
 
