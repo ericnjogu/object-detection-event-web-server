@@ -15,7 +15,8 @@ event_queue = None
 
 def detection_event_stream():
     """ get available detection item in event queue """
-    yield json_format.MessageToJson(event_queue.get())
+    json_no_newlines = json_format.MessageToJson(event_queue.get()).replace('\n', '')
+    yield f"event:detection\ndata:{json_no_newlines}\n\n"
 
 @app.route('/stream')
 def stream():
