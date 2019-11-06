@@ -3,6 +3,7 @@ This app implements a gRPC + flask server that takes detection handler requests 
 
 ## Resources
 - [One of the answers](https://stackoverflow.com/a/12236019/315385) to `How to implement server push in Flask framework` on stackoverflow.com
+- HTTP server events - https://www.html5rocks.com/en/tutorials/eventsource/basics/
 
 ## Running
 - Download or clone the [video object detection repo](https://github.com/kunadawa/video-object-detection)
