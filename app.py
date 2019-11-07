@@ -4,20 +4,23 @@ import argparse
 import grpc
 from concurrent import futures
 import logging
-import queue
-import google.protobuf.json_format as json_format
+import redis
 
 from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
 from web_handler import WebDetectionHandler
 
 app = Flask(__name__)
-event_queue = None
+# connect to redis at default port, host as these will be wired up to the container
+redis = redis.StrictRedis()
+pubsub = redis.pubsub()
+CHANNEL = "detection_events"
+pubsub.subscribe(CHANNEL)
 
 def detection_event_stream():
-    """ get available detection item in event queue """
-    # json_format or a dependency appears to change top level field names to camel case
-    json_no_newlines = json_format.MessageToJson(event_queue.get()).replace('\n', '')
-    yield f"event:detection\ndata:{json_no_newlines}\n\n"
+    """ get available detection item in channel """
+    message = pubsub.get_message()
+    if message is not None:
+        return message.get('data')
 
 @app.route('/stream')
 def stream():
@@ -39,10 +42,8 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.DEBUG)
     logging.info(f'starting server on port {port}')
     server.add_insecure_port(f'[::]:{port}')
-    # create queue
-    event_queue = queue.SimpleQueue()
     # add implementing class to server
-    web_handler = WebDetectionHandler(event_queue)
+    web_handler = WebDetectionHandler(redis, CHANNEL)
     detection_handler_pb2_grpc.add_DetectionHandlerServicer_to_server(web_handler, server);
     # start grpc server
     server.start()
