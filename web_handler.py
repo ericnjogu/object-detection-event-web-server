@@ -2,14 +2,39 @@ import numpy
 import logging
 import queue
 import google.protobuf.json_format as json_format
+from flask import Flask
+from flask.wrappers import Response
+import grpc
+from concurrent import futures
 
 from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
 
 
-class WebDetectionHandler(detection_handler_pb2_grpc.DetectionHandlerServicer):
-    def __init__(self):
+class WebDetectionHandler(detection_handler_pb2_grpc.DetectionHandlerServicer, Flask):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # create queue
         self.queue = queue.SimpleQueue()
+        # setup routing
+        self.add_url_rule('/stream', view_func=self.stream)
+
+    def start_grpc_server(self, handler_port):
+        # credit - https://www.semantics3.com/blog/a-simplified-guide-to-grpc-in-python-6c4e25f0c506/
+        # create server
+        grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        # grpc port setup
+        logging.getLogger().setLevel(logging.DEBUG)
+        logging.info(f'starting GRPC server on port {handler_port}')
+        grpc_server.add_insecure_port(f'[::]:{handler_port}')
+        detection_handler_pb2_grpc.add_DetectionHandlerServicer_to_server(self, grpc_server);
+        # start grpc server
+        grpc_server.start()
+
+    def stream(self):
+        response = Response(self.detection_event_stream(), mimetype="text/event-stream")
+        # TODO manage this via configuration
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        return response
 
     def handle_detection(self, request, context):
         """
