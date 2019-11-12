@@ -5,7 +5,7 @@ import google.protobuf.json_format as json_format
 from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
 
 
-def frame_array_to_image_data(frame):
+def frame_array_to_canvas_image_data(frame):
     """
     Takes image array and adds an alpha channel to each pixel
     :param frame: a flattened array that represents a video frame (image)
