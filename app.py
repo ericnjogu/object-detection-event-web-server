@@ -5,11 +5,15 @@ import grpc
 from concurrent import futures
 import logging
 import redis
+from flask_compress import Compress
 
 from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
 from web_handler import WebDetectionHandler
 
 app = Flask(__name__)
+# to be set on IDE run config, shell or other way
+app.config.from_envvar('SETTINGS')
+Compress(app)
 # connect to redis at default port, host as these will be wired up to the container
 redis = redis.StrictRedis()
 pubsub = redis.pubsub()
