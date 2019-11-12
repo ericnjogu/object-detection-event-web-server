@@ -1,7 +1,6 @@
 import numpy
 import logging
 import google.protobuf.json_format as json_format
-import tempfile
 
 from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
 
@@ -32,12 +31,6 @@ class WebDetectionHandler(detection_handler_pb2_grpc.DetectionHandlerServicer):
         """
         handle a detection output
         """
-        # save request to file for further testing
-        with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as tmp_file:
-            msg_to_string = request.SerializeToString()
-            #logging.debug(msg_to_string)
-            tmp_file.write(msg_to_string)
-            logging.debug(f"wrote detection request to {tmp_file.name}")
         frame_request = detection_handler_pb2.handle_detection_request(
             frame=detection_handler_pb2.float_array(numbers=frame_array_to_image_data(request.frame)))
         request.MergeFrom(frame_request)
