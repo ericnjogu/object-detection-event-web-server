@@ -1,8 +1,15 @@
 import numpy
+import pytest
 
 from web_handler import frame_array_to_image_data
 from proto.generated import detection_handler_pb2
 
+@pytest.fixture
+def create_req_msg_from_file_01():
+    msg = detection_handler_pb2.handle_detection_request()
+    with open('./samples/detection-request-with-frame-01.bin', 'rb') as f:
+        msg.ParseFromString(f.read())
+    return msg
 
 def test_frame_array_to_image_data():
     frame = detection_handler_pb2.float_array(numbers=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], shape=[1, 4, 3])
