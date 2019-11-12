@@ -46,9 +46,7 @@ class WebDetectionHandler(detection_handler_pb2_grpc.DetectionHandlerServicer):
         """
         img_data = frame_array_to_canvas_image_data(request.frame)
         merged_req = merge_request_with_canvas_image_data(request, img_data)
-        json_no_newlines = json_format(merged_req)
-        # can send extra data line with modified frame,
-        # how do I delete the one in the original request to avoid sending unnecessary data
+        json_no_newlines = json_format.MessageToJson(merged_req).replace('\n', '')
         http_event = f"event:detection\ndata:{json_no_newlines}\n\n"
         self.redis.publish(self.channel, http_event)
         logging.info(f'placed request on queue, frame_count: {request.frame_count}')
