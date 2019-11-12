@@ -1,7 +1,7 @@
 import numpy
 import pytest
 
-from web_handler import frame_array_to_image_data
+from web_handler import merge_request_with_canvas_image_data
 from proto.generated import detection_handler_pb2
 from web_handler import frame_array_to_canvas_image_data
 
@@ -27,3 +27,10 @@ def test_frame_array_to_canvas_image_data_real_data_01(create_req_msg_from_file_
     assert len(img_data) == 640000, "for each pixel, we are adding an additional number for alpha channel"
     numpy_img = numpy.array(img_data, numpy.int32).reshape((400,400,4))
     assert numpy_img[0][0][3] == 255
+
+
+def test_merge_request_with_canvas_image_data(create_req_msg_from_file_01):
+    request = create_req_msg_from_file_01
+    img_data = frame_array_to_canvas_image_data(request.frame)
+    merged_req = merge_request_with_canvas_image_data(request, img_data)
+    assert len(merged_req.frame.numbers) == 640000, "request should be updated"
