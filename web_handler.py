@@ -47,7 +47,7 @@ class WebDetectionHandler(detection_handler_pb2_grpc.DetectionHandlerServicer):
         img_data = frame_array_to_canvas_image_data(request.frame)
         merged_req = merge_request_with_canvas_image_data(request, img_data)
         json_no_newlines = json_format.MessageToJson(merged_req).replace('\n', '')
-        http_event = f"event:detection\ndata:{json_no_newlines}\n\n"
+        http_event = f"event:detection\ndata:{json_no_newlines}\nid:{request.string_map['id']}\n\n"
         self.redis.publish(self.channel, http_event)
         logging.info(f'placed request on queue, frame_count: {request.frame_count}')
         return detection_handler_pb2.handle_detection_response(status=True)
