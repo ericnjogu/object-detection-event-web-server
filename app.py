@@ -24,7 +24,13 @@ def detection_event_stream():
     """ get available detection item in channel """
     message = pubsub.get_message()
     if message is not None:
-        return message.get('data')
+        data = message.get('data')
+        # redis returns a 1 when there's no data or for the first get,
+        # which causes TypeError: 'int' object is not iterable, so converting to string
+        if isinstance(data, int):
+            return str(data)
+        else:
+            return data
 
 @app.route('/stream')
 def stream():
