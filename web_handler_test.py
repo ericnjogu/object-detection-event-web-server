@@ -1,5 +1,9 @@
 import numpy
 import pytest
+import imageio
+import tempfile
+import logging
+import os
 
 from web_handler import merge_request_with_canvas_image_data
 from proto.generated import detection_handler_pb2
@@ -34,3 +38,11 @@ def test_merge_request_with_canvas_image_data(create_req_msg_from_file_01):
     img_data = frame_array_to_canvas_image_data(request.frame)
     merged_req = merge_request_with_canvas_image_data(request, img_data)
     assert len(merged_req.frame.numbers) == 640000, "request should be updated"
+
+def test_merge_request_with_canvas_image_data(create_req_msg_from_file_01):
+    frame = numpy.array(create_req_msg_from_file_01.frame.numbers, numpy.int32).reshape((400,400,3))
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as file:
+        imageio.imwrite(file.name, frame)
+        logging.debug(f"saved file {file.name}")
+        thirty_kb = 30 * 1024
+        assert os.stat(file.name).st_size < thirty_kb
