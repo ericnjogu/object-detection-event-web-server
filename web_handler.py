@@ -1,38 +1,42 @@
 import numpy
 import logging
 import google.protobuf.json_format as json_format
+import imageio
+import io
 
 from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
 
-
-def frame_array_to_canvas_image_data(frame):
-    """
-    Takes image array and adds an alpha channel to each pixel
-    :param frame: a flattened array that represents a video frame (image)
-    :return: a flattened array in a format ready to be used by HTML5 ImageData
-    """
-    # TODO change this to use dataframe and compare performance. Current is 0.96s for ./samples/detection-request-with-frame-01.bin
-    # discard the openCV outer array from the shape, change to int
-    numpy_array = numpy.array(frame.numbers, dtype=numpy.int32).reshape(frame.shape)
-    alpha_array = []
-    for row in numpy_array:
-        for col in row:
-            alpha_array.append(numpy.append(col, 255))
-    return numpy.array(alpha_array).ravel().tolist()
+FRAMES_ROUTE = '/frames'
+FRAME_KEY = 'frame_path'
 
 
-def merge_request_with_canvas_image_data(request, canvas_data):
+def save_frame_to_redis(request_id, frame, redis):
     """
-    :param request: a protobuf message of type detection_handler_pb2.handle_detection_request
-    :param canvas_data: a flattened array with image data in the form expected by HTML5 ImageData
-    :return: the request, with frame.numbers replaced by the canvas_data
+    save frame to redis  as jpeg using the request id as a key
+    :param request_id: request id
+    :param frame: numpy array
+    :param redis: redis client
+    :return: None
     """
-    frame_request = detection_handler_pb2.handle_detection_request(
-        frame=detection_handler_pb2.float_array(numbers=canvas_data))
+    bytes_io = io.BytesIO()
+    imageio.imwrite(bytes_io, frame, format='JPEG-PIL')
+    key = f"{FRAMES_ROUTE}/{request_id}.jpg"
+    redis.set(key, bytes_io.getvalue())
+
+    return key
+
+
+def clear_frame_set_path(request, path):
+    """
+    clear frame field and add an additional entry to string map
+    :param request: detection request
+    :param path: the path to use to create an entry
+    :return: None
+    """
+    request_to_merge = detection_handler_pb2.handle_detection_request(
+        string_map={FRAME_KEY: path})
     request.ClearField('frame')
-    request.MergeFrom(frame_request)
-
-    return request
+    request.MergeFrom(request_to_merge)
 
 
 class WebDetectionHandler(detection_handler_pb2_grpc.DetectionHandlerServicer):
@@ -44,9 +48,11 @@ class WebDetectionHandler(detection_handler_pb2_grpc.DetectionHandlerServicer):
         """
         handle a detection output
         """
-        img_data = frame_array_to_canvas_image_data(request.frame)
-        merged_req = merge_request_with_canvas_image_data(request, img_data)
-        json_no_newlines = json_format.MessageToJson(merged_req).replace('\n', '')
+        frame = numpy.array(request.frame.numbers, dtype=numpy.uint8).reshape(request.frame.shape)
+        path = save_frame_to_redis(request.string_map['id'], frame, self.redis)
+        clear_frame_set_path(request, path)
+
+        json_no_newlines = json_format.MessageToJson(request).replace('\n', '')
         http_event = f"event:detection\ndata:{json_no_newlines}\nid:{request.string_map['id']}\n\n"
         self.redis.publish(self.channel, http_event)
         logging.info(f'placed request on queue, frame_count: {request.frame_count}')

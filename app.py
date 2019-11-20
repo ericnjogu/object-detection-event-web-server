@@ -9,6 +9,7 @@ from flask_compress import Compress
 
 from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
 from web_handler import WebDetectionHandler
+import web_handler
 
 app = Flask(__name__)
 # to be set on IDE run config, shell or other way
@@ -19,6 +20,7 @@ redis = redis.StrictRedis()
 pubsub = redis.pubsub()
 CHANNEL = "detection_events"
 pubsub.subscribe(CHANNEL)
+
 
 def detection_event_stream():
     """ get available detection item in channel """
@@ -35,12 +37,23 @@ def detection_event_stream():
     except redis.exceptions.ConnectionError:
         pass
 
+
 @app.route('/stream')
 def stream():
     response = Response(detection_event_stream(), mimetype="text/event-stream")
     # TODO manage this via configuration
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+
     return response
+
+
+@app.route(f'{web_handler.FRAMES_ROUTE}/<img_key>')
+def frames(img_key):
+    frame = redis.get(img_key)
+    response = Response(frame, mimetype="image/jpeg")
+
+    return response
+
 
 if __name__ == '__main__':
     # parse args
