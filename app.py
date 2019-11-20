@@ -51,7 +51,7 @@ def stream():
 def frames(img_key):
     frame = redis.get(img_key)
     if frame is None:
-        response = Response(status=404)
+        response = Response(f'{img_key} not found', status=404)
     else:
         response = Response(frame, mimetype="image/jpeg")
 
