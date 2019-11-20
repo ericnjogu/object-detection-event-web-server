@@ -50,7 +50,10 @@ def stream():
 @app.route(f'{web_handler.FRAMES_ROUTE}/<img_key>')
 def frames(img_key):
     frame = redis.get(img_key)
-    response = Response(frame, mimetype="image/jpeg")
+    if frame is None:
+        response = Response(status=404)
+    else:
+        response = Response(frame, mimetype="image/jpeg")
 
     return response
 
