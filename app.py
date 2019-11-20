@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask.wrappers import Response
 import argparse
 import grpc
@@ -49,7 +49,7 @@ def stream():
 
 @app.route(f'{web_handler.FRAMES_ROUTE}/<img_key>')
 def frames(img_key):
-    frame = redis.get(img_key)
+    frame = redis.get(request.path)
     if frame is None:
         response = Response(f'{img_key} not found', status=404)
     else:
