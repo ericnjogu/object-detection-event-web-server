@@ -14,6 +14,9 @@ This app implements a gRPC + flask server that takes detection handler requests 
 - add the generated python code to the python path
 
    `export PYTHONPATH=.:[video object detection repo]proto/generated/`
+- set an environmental variable for the flask app settings
+
+    `export SETTINGS=settings.cfg`
 - startup the server with a command such as the one below
  
   `python app.py 50002`
