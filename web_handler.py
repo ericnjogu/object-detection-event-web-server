@@ -55,5 +55,5 @@ class WebDetectionHandler(detection_handler_pb2_grpc.DetectionHandlerServicer):
         json_no_newlines = json_format.MessageToJson(request).replace('\n', '')
         http_event = f"event:detection\ndata:{json_no_newlines}\nid:{request.string_map['id']}\n\n"
         self.redis.publish(self.channel, http_event)
-        logging.info(f'placed request on queue, frame_count: {request.frame_count}')
+        logging.info(f'placed request on queue, frame_count: {request.frame_count}, instance: {request.instance_name}, source: {request.source}')
         return detection_handler_pb2.handle_detection_response(status=True)
