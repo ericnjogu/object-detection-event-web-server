@@ -9,7 +9,7 @@ This app implements a gRPC + flask server that takes detection handler requests 
 ## Running
 - Download or clone the [video object detection repo](https://github.com/kunadawa/video-object-detection)
 - In this repo's root, make the following soft link to the generated protobuf code (check the repos readme.md for instructions on how to generate the code)
- 
+
   `[video object detection repo]/proto`
 - add the generated python code to the python path
 
@@ -17,8 +17,12 @@ This app implements a gRPC + flask server that takes detection handler requests 
 - set an environmental variable for the flask app settings
 
     `export SETTINGS=settings.cfg`
+- if running on a network (not localhost), set host name where the react app is running. This will help to avoid CORS errors.
+
+ `export STREAMING_NETWORK_HOST=192.168.100.55`
+
 - startup the server with a command such as the one below
- 
+
   `python app.py 50002`
 
 ## Contributors

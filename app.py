@@ -6,10 +6,15 @@ from concurrent import futures
 import logging
 import redis
 from flask_compress import Compress
+import os
 
 from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
 from web_handler import WebDetectionHandler
 import web_handler
+
+# the react app and web streaming app will appear to run from the same host but different ports
+ENV_VAR_NETWORK_HOST = 'STREAMING_NETWORK_HOST'
+network_host = os.environ.get(ENV_VAR_NETWORK_HOST, 'localhost')
 
 app = Flask(__name__)
 # to be set on IDE run config, shell or other way
@@ -41,8 +46,8 @@ def detection_event_stream():
 @app.route('/stream')
 def stream():
     response = Response(detection_event_stream(), mimetype="text/event-stream")
-    # TODO manage this via configuration
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    # TODO retrieve/manage access scheme
+    response.headers.add('Access-Control-Allow-Origin', f'http://{network_host}:{3000}')
 
     return response
 
@@ -79,4 +84,4 @@ if __name__ == '__main__':
 
     # start flask
     app.debug = True
-    app.run(threaded=True)
+    app.run(host=network_host)
