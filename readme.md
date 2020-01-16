@@ -11,6 +11,11 @@ This app implements a gRPC + flask server that takes detection handler requests 
 - In this repo's root, make the following soft link to the generated protobuf code (check the repos readme.md for instructions on how to generate the code)
 
   `[video object detection repo]/proto`
+
+- Run the basic startup script
+  `bash start.sh`
+
+##### OR (step by step commands)
 - add the generated python code to the python path
 
    `export PYTHONPATH=.:[video object detection repo]proto/generated/`
