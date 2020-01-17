@@ -7,6 +7,7 @@ import logging
 import redis
 from flask_compress import Compress
 import os
+from io import StringIO
 
 from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
 from web_handler import WebDetectionHandler
@@ -30,15 +31,19 @@ pubsub.subscribe(CHANNEL)
 def detection_event_stream():
     """ get available detection item in channel """
     try:
-        message = pubsub.get_message()
-        if message is not None:
-            data = message.get('data')
-            # redis returns a 1 when there's no data or for the first get,
-            # which causes TypeError: 'int' object is not iterable, so converting to string
-            if isinstance(data, int):
-                return str(data)
+        buffer = StringIO()
+        message_count = 0
+        while True:
+            message = pubsub.get_message()
+            if message is None:
+                break
             else:
-                return data
+                data = message.get('data');
+                # https://stackoverflow.com/a/1686400/315385
+                buffer.write(data.decode() if isinstance(data, bytes) else '')
+                message_count += 1
+        logging.debug(f"retrieved {message_count} messages from redis:")
+        return buffer.getvalue()
     except redis.exceptions.ConnectionError:
         pass
 
