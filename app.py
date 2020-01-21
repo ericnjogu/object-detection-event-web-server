@@ -10,7 +10,6 @@ import os
 from io import StringIO
 
 from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
-from web_handler import WebDetectionHandler
 import web_handler
 
 # the react app and web streaming app will appear to run from the same host but different ports
@@ -21,11 +20,9 @@ app = Flask(__name__)
 # to be set on IDE run config, shell or other way
 app.config.from_envvar('SETTINGS')
 Compress(app)
-# connect to redis at default port, host as these will be wired up to the container
-redis = redis.StrictRedis()
-pubsub = redis.pubsub()
-CHANNEL = "detection_events"
-pubsub.subscribe(CHANNEL)
+
+# pubsub variable so that it can be initialized in __main__()
+pubsub = None
 
 
 def detection_event_stream():
@@ -39,8 +36,17 @@ def detection_event_stream():
                 break
             else:
                 data = message.get('data');
+                protobuf_request = detection_handler_pb2.handle_detection_request()
+                if isinstance(data, bytes):
+                    protobuf_request.ParseFromString(data.decode())
+                else:
+                    continue
+                path = web_handler.save_frame_to_redis(protobuf_request, redis)
+                web_handler.clear_frame_set_path(protobuf_request, path)
+                json_no_newlines = json_format.MessageToJson(protobuf_request).replace('\n', '')
+                http_event = f"event:detection\ndata:{json_no_newlines}\nid:{request.string_map['id']}\n\n"
                 # https://stackoverflow.com/a/1686400/315385
-                buffer.write(data.decode() if isinstance(data, bytes) else '')
+                buffer.write(http_event)
                 message_count += 1
         logging.debug(f"retrieved {message_count} messages from redis:")
         return buffer.getvalue()
@@ -71,21 +77,14 @@ def frames(img_key):
 if __name__ == '__main__':
     # parse args
     parser = argparse.ArgumentParser(description=" stream detected object events to web clients")
-    parser.add_argument("handler_port", help="port to listen for detection handling requests")
+    parser.add_argument("prediction_channel", help="channel to subscribe to for detection handling requests")
     args = parser.parse_args()
-    # credit - https://www.semantics3.com/blog/a-simplified-guide-to-grpc-in-python-6c4e25f0c506/
-    # create server
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    # grpc port setup
-    port = args.handler_port
-    logging.getLogger().setLevel(logging.DEBUG)
-    logging.info(f'starting server on port {port}')
-    server.add_insecure_port(f'[::]:{port}')
-    # add implementing class to server
-    web_handler = WebDetectionHandler(redis, CHANNEL)
-    detection_handler_pb2_grpc.add_DetectionHandlerServicer_to_server(web_handler, server);
-    # start grpc server
-    server.start()
+
+    # connect to redis at default port, host as these will be wired up to the container
+    redis = redis.StrictRedis()
+    pubsub = redis.pubsub()
+    channel = args.prediction_channel
+    pubsub.subscribe(channel)
 
     # start flask
     app.debug = True

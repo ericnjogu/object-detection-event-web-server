@@ -10,18 +10,20 @@ FRAMES_ROUTE = '/frames'
 FRAME_KEY = 'frame_path'
 
 
-def save_frame_to_redis(request_id, frame, redis):
+def save_frame_to_redis(request, redis):
     """
     save frame to redis  as jpeg using the request id as a key
-    :param request_id: request id
+    :param request: a protobuf detection request
     :param frame: numpy array
     :param redis: redis client
     :return: None
     """
+    ndarray = numpy.array(request.frame.numbers, dtype=numpy.uint8).reshape(request.frame.shape)
     bytes_io = io.BytesIO()
-    imageio.imwrite(bytes_io, frame, format='JPEG-PIL')
-    key = f"{FRAMES_ROUTE}/{request_id}.jpg"
+    imageio.imwrite(bytes_io, ndarray, format='JPEG-PIL')
+    key = f"{FRAMES_ROUTE}/{request.string_map['id']}.jpg"
     redis.set(key, bytes_io.getvalue())
+    # TODO set expire on the key - using a configurable value
 
     return key
 
@@ -37,23 +39,3 @@ def clear_frame_set_path(request, path):
         string_map={FRAME_KEY: path})
     request.ClearField('frame')
     request.MergeFrom(request_to_merge)
-
-
-class WebDetectionHandler(detection_handler_pb2_grpc.DetectionHandlerServicer):
-    def __init__(self, redis, channel):
-        self.redis = redis
-        self.channel = channel
-
-    def handle_detection(self, request, context):
-        """
-        handle a detection output
-        """
-        frame = numpy.array(request.frame.numbers, dtype=numpy.uint8).reshape(request.frame.shape)
-        path = save_frame_to_redis(request.string_map['id'], frame, self.redis)
-        clear_frame_set_path(request, path)
-
-        json_no_newlines = json_format.MessageToJson(request).replace('\n', '')
-        http_event = f"event:detection\ndata:{json_no_newlines}\nid:{request.string_map['id']}\n\n"
-        self.redis.publish(self.channel, http_event)
-        logging.info(f'placed request on queue, frame_count: {request.frame_count}, instance: {request.instance_name}, source: {request.source}')
-        return detection_handler_pb2.handle_detection_response(status=True)

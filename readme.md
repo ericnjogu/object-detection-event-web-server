@@ -8,12 +8,13 @@ This app implements a gRPC + flask server that takes detection handler requests 
 
 ## Running
 - Download or clone the [video object detection repo](https://github.com/kunadawa/video-object-detection)
+- when started this flask app will listen to a redis channel which the predition results are being published to. The name of the channel is given on the CLI as an arg and should match the one given to the app generating the prediction results.
 - In this repo's root, make the following soft link to the generated protobuf code (check the repos readme.md for instructions on how to generate the code)
 
   `[video object detection repo]/proto`
 
 - Run the basic startup script
-  `bash start.sh`
+  `bash start.sh <redis-channel-name>`
 
 ##### OR (step by step commands)
 - add the generated python code to the python path
@@ -28,7 +29,7 @@ This app implements a gRPC + flask server that takes detection handler requests 
 
 - startup the server with a command such as the one below
 
-  `python app.py 50002`
+  `python app.py 50002 <redis-channel-name>`
 
 ## Testing
 Individual tests can be run like this:

@@ -28,18 +28,22 @@ def test_write_image_file(create_req_msg_from_file_01):
 
 
 def test_save_frame_to_redis():
-    frame = mock.Mock()
+    ndarray = mock.Mock(reshape=lambda x: 'ndarray')
     id = "1305"
     redis = mock.Mock()
+    request = mock.Mock()
+    request.string_map = {'id':id}
     expected_path = f"{FRAMES_ROUTE}/{id}.jpg"
     with mock.patch('web_handler.imageio') as mock_imageio:
         with mock.patch('web_handler.io') as io:
-            lunch = "lunch"
-            io.BytesIO().getvalue.return_value = lunch
-            path = save_frame_to_redis(id, frame, redis)
-            mock_imageio.imwrite.assert_called_with(io.BytesIO(), frame, format="JPEG-PIL")
-            redis.set.assert_called_with(expected_path, lunch)
-            assert expected_path == path
+            with mock.patch('numpy.array'):
+                lunch = "lunch"
+                io.BytesIO().getvalue.return_value = lunch
+                numpy.array.return_value = ndarray
+                path = save_frame_to_redis(request, redis)
+                mock_imageio.imwrite.assert_called_with(io.BytesIO(), 'ndarray', format="JPEG-PIL")
+                redis.set.assert_called_with(expected_path, lunch)
+                assert expected_path == path
 
 
 def test_clear_frame_set_path():

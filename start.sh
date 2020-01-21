@@ -2,4 +2,4 @@
 source activate web-server-events
 export PYTHONPATH=.:proto/generated
 export SETTINGS=settings.cfg
-python app.py 50002
+python app.py $*
