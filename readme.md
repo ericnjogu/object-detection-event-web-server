@@ -30,6 +30,11 @@ This app implements a gRPC + flask server that takes detection handler requests 
 
   `python app.py 50002`
 
+## Testing
+Individual tests can be run like this:
+
+`bash run_with_env.sh pytest web_handler_test.py --disable-warnings --log-cli-level=DEBUG`
+
 ## Contributors
 Eric Njogu
 
