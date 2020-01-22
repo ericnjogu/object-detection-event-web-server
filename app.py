@@ -8,6 +8,7 @@ import redis
 from flask_compress import Compress
 import os
 from io import StringIO
+import google.protobuf.json_format as json_format
 
 from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
 import web_handler
@@ -38,17 +39,17 @@ def detection_event_stream():
                 data = message.get('data');
                 protobuf_request = detection_handler_pb2.handle_detection_request()
                 if isinstance(data, bytes):
-                    protobuf_request.ParseFromString(data.decode())
+                    protobuf_request.ParseFromString(data)
                 else:
                     continue
                 path = web_handler.save_frame_to_redis(protobuf_request, redis)
                 web_handler.clear_frame_set_path(protobuf_request, path)
                 json_no_newlines = json_format.MessageToJson(protobuf_request).replace('\n', '')
-                http_event = f"event:detection\ndata:{json_no_newlines}\nid:{request.string_map['id']}\n\n"
+                http_event = f"event:detection\ndata:{json_no_newlines}\nid:{protobuf_request.string_map['id']}\n\n"
                 # https://stackoverflow.com/a/1686400/315385
                 buffer.write(http_event)
                 message_count += 1
-        logging.debug(f"retrieved {message_count} messages from redis:")
+        logging.debug(f"retrieved {message_count} messages from redis")
         return buffer.getvalue()
     except redis.exceptions.ConnectionError:
         pass
@@ -75,13 +76,14 @@ def frames(img_key):
 
 
 if __name__ == '__main__':
+    logging.getLogger().setLevel(logging.DEBUG)
     # parse args
     parser = argparse.ArgumentParser(description=" stream detected object events to web clients")
     parser.add_argument("prediction_channel", help="channel to subscribe to for detection handling requests")
     args = parser.parse_args()
 
     # connect to redis at default port, host as these will be wired up to the container
-    redis = redis.StrictRedis()
+    redis = redis.Redis()
     pubsub = redis.pubsub()
     channel = args.prediction_channel
     pubsub.subscribe(channel)

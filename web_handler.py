@@ -1,6 +1,5 @@
 import numpy
 import logging
-import google.protobuf.json_format as json_format
 import imageio
 import io
 
