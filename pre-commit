@@ -1,0 +1,20 @@
+#!/bin/bash
+#echo "$(pwd)" > /tmp/wapi
+#exit 1
+
+# Export conda environment to yaml file
+conda env export -n object_detection_web --file ./env.yaml --from-history
+
+# Check if new environment file is different from original
+git diff --exit-code --quiet ./env.yaml
+
+# If new environment file is different, commit it
+if [[ $? -eq 0 ]]; then
+    echo "Conda environment not changed. No additional commit"
+else
+    echo "Conda environment changed. Commit new env.yaml"
+    #git add ./env.yaml
+    #git commit -m "Updating conda environment"
+    #echo 'You need to push again to push additional "Updating conda environment" commit'
+    exit 1
+fi
