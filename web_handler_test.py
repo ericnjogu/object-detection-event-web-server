@@ -7,7 +7,7 @@ import os
 from unittest import mock
 
 from web_handler import save_frame_to_redis, FRAMES_ROUTE, clear_frame_set_path
-from proto.generated import detection_handler_pb2
+from juu_object_detection_protos.api.generated import detection_handler_pb2
 
 
 @pytest.fixture

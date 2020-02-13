@@ -3,7 +3,7 @@ import logging
 import imageio
 import io
 
-from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
+from juu_object_detection_protos.api.generated import detection_handler_pb2
 
 FRAMES_ROUTE = '/frames'
 FRAME_KEY = 'frame_path'
