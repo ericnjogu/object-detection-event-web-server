@@ -1,5 +1,4 @@
 #~/bin/bash
-source activate web-server-events
-export PYTHONPATH=.:proto/generated
+source activate object_detection_web
 export SETTINGS=settings.cfg
 python app.py $*
