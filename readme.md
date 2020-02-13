@@ -32,7 +32,7 @@ A conda environment is created to install required packages.
 ## Testing
 Individual tests can be run like this:
 
-`bash run_with_env.sh pytest web_handler_test.py --disable-warnings --log-cli-level=DEBUG`
+`bash run_with_env.sh python -m pytest web_handler_test.py --disable-warnings --log-cli-level=DEBUG`
 
 ## Contributors
 Eric Njogu
