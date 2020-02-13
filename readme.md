@@ -9,20 +9,15 @@ This app implements a gRPC + flask server that takes detection handler requests 
 ## Redis Notes
 When retrieving a message from the pubsub when many have been pushed, there was a redis error (`subscribe scheduled to be closed ASAP for overcoming of output buffer limits`) that caused the connection to be closed. This was resolved by using this configuration in redis.conf - `client-output-buffer-limit pubsub 0 0 0`
 
+## Setup
+A conda environment is created to install required packages.
+ - Run `conda env create -f env.yaml` to setup a conda environment
+
 ## Running
-- Download or clone the [video object detection repo](https://github.com/kunadawa/video-object-detection)
-- when started this flask app will listen to a redis channel which the predition results are being published to. The name of the channel is given on the CLI as an arg and should match the one given to the app generating the prediction results.
-- In this repo's root, make the following soft link to the generated protobuf code (check the repos readme.md for instructions on how to generate the code)
-
-  `[video object detection repo]/proto`
-
 - Run the basic startup script
   `bash start.sh <redis-channel-name>`
 
 ##### OR (step by step commands)
-- add the generated python code to the python path
-
-   `export PYTHONPATH=.:[video object detection repo]proto/generated/`
 - set an environmental variable for the flask app settings
 
     `export SETTINGS=settings.cfg`
