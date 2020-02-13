@@ -1,8 +1,6 @@
 from flask import Flask, request
 from flask.wrappers import Response
 import argparse
-import grpc
-from concurrent import futures
 import logging
 import redis
 from flask_compress import Compress
