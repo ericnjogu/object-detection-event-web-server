@@ -8,7 +8,7 @@ import os
 from io import StringIO
 import google.protobuf.json_format as json_format
 
-from proto.generated import detection_handler_pb2_grpc, detection_handler_pb2
+from juu_object_detection_protos.api.generated import detection_handler_pb2
 import web_handler
 
 # the react app and web streaming app will appear to run from the same host but different ports
